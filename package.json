@@ -1,0 +1,25 @@
+{
+  "name": "scambreak",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A privacy-first, explainable scam analysis platform.",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=@scambreak/api\" \"npm run dev --workspace=@scambreak/web\"",
+    "build": "npm run build --workspace=@scambreak/api && npm run build --workspace=@scambreak/web",
+    "test": "npm run test --workspace=@scambreak/api && npm run test --workspace=@scambreak/web",
+    "test:api": "npm run test --workspace=@scambreak/api",
+    "test:web": "npm run test --workspace=@scambreak/web",
+    "typecheck": "npm run typecheck --workspace=@scambreak/api && npm run typecheck --workspace=@scambreak/web",
+    "lint": "npm run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.11.0",
+    "npm": ">=10.0.0"
+  }
+}

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs & artifacts
+dist/
+build/
+*.tsbuildinfo
+.vite/
+playwright-report/
+test-results/
+coverage/
+
+# Environment and sensitive secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+!.env.example
+apps/api/.env*
+!apps/api/.env.example
+apps/web/.env*
+!apps/web/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data & private storage
+data/
+uploads/
+.mongo-dev-data/
+*.sqlite
+*.db
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
