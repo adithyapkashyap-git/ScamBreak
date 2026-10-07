@@ -1,4 +1,6 @@
 import { createServer, type Server } from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { config } from './config/index.js';
 import { connectDatabase, disconnectDatabase } from './lib/database.js';
@@ -42,9 +44,23 @@ async function run(): Promise<void> {
   process.once('SIGTERM', () => void shutdown('SIGTERM'));
 }
 
-if (import.meta.url === `file:///${process.argv[1]?.replace(/\\/g, '/')}`) {
+const isMainModule = (): boolean => {
+  if (!process.argv[1]) return false;
+  const scriptName = path.basename(process.argv[1]);
+  if (scriptName.startsWith('server.') || scriptName === 'server') {
+    return true;
+  }
+  try {
+    return fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+  } catch {
+    return false;
+  }
+};
+
+if (isMainModule()) {
   run().catch((error: unknown) => {
     logger.fatal({ operation: 'server.start', ...safeErrorMetadata(error) }, 'ScamBreak API could not start');
-    process.exitCode = 1;
+    console.error('ScamBreak API could not start:', error);
+    process.exit(1);
   });
 }
