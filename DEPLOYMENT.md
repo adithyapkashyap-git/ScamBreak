@@ -60,7 +60,7 @@ You can deploy the backend to any Node.js hosting platform (such as Render, Rail
 ### Build & Start Commands
 - **Root Directory**: `apps/api` (or repository root if running workspace commands)
 - **Install Command**: `npm ci`
-- **Build Command**: `npm run build --workspace=@scambreak/api`
+- **Build Command**: `npm ci --include=dev && npm run build --workspace=@scambreak/api`
 - **Start Command**: `node apps/api/dist/server.js` (or `npm run start --workspace=@scambreak/api`)
 
 ### Health Check Probes
