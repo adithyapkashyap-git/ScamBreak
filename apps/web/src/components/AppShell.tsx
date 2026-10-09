@@ -41,15 +41,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span>Scam<span>Break</span></span>
         </Link>
         <div className="topbar-status"><span className="status-dot" />Defensive analysis workspace</div>
-        <nav className="topbar-actions" aria-label="Account">
+        <div className="topbar-right">
           <ThemeToggle />
-          <Link className="quiet-link" to="/patterns">How it works</Link>
-          <Link className="account-link" to="/account"><Icon name="user" size={17} />Account</Link>
-        </nav>
-        <button className="mobile-menu-button" type="button" aria-label="Open navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
-          <Icon name={menuOpen ? 'close' : 'menu'} />
-        </button>
+          <nav className="topbar-actions" aria-label="Account">
+            <Link className="quiet-link" to="/patterns">How it works</Link>
+            <Link className="account-link" to="/account"><Icon name="user" size={17} />Account</Link>
+          </nav>
+          <button className="mobile-menu-button" type="button" aria-label="Open navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
+            <Icon name={menuOpen ? 'close' : 'menu'} />
+          </button>
+        </div>
       </header>
+      {menuOpen && (
+        <div className="sidebar-backdrop" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+      )}
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`} aria-label="Main navigation">
         <div className="sidebar-inner">
           <p className="nav-label">Your workspace</p>

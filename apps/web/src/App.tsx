@@ -179,16 +179,19 @@ function AuthPage() {
   };
 
   return <div className="auth-screen">
-    <Link className="brand auth-brand" to="/"><LogoMark size={28} /><span>Scam<span>Break</span></span></Link>
+    <div className="auth-topbar">
+      <Link className="brand auth-brand" to="/" aria-label="ScamBreak home"><LogoMark size={28} /><span>Scam<span>Break</span></span></Link>
+      <ThemeToggle />
+    </div>
     <section className="auth-card">
       <p className="eyebrow">Private workspace</p>
       <h1>{mode === 'create' ? 'Protect your analyses' : 'Welcome back'}</h1>
       <p>Evidence and results are private to your account. We use an HttpOnly session cookie, never a browser storage token.</p>
       {error && <Notice tone="danger">{error}</Notice>}
       <form onSubmit={submit} className="form-stack">
-        {mode === 'create' && <label>Display name<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} minLength={2} maxLength={80} autoComplete="name" required /></label>}
-        <label>Email address<input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" required /></label>
-        <label>Password<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete={mode === 'create' ? 'new-password' : 'current-password'} minLength={mode === 'create' ? 12 : 1} maxLength={128} required /></label>
+        {mode === 'create' && <label><span>Display name</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} minLength={2} maxLength={80} autoComplete="name" required /></label>}
+        <label><span>Email address</span><input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" required /></label>
+        <label><span>Password</span><input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete={mode === 'create' ? 'new-password' : 'current-password'} minLength={mode === 'create' ? 12 : 1} maxLength={128} required /></label>
         {mode === 'create' && <p className="field-help">Use at least 12 characters. Choose a password you do not reuse elsewhere.</p>}
         <button className="button button-primary full-width" disabled={saving}>{saving ? 'Securing your workspace…' : mode === 'create' ? 'Create private account' : 'Sign in securely'} <Icon name="arrow-right" size={18} /></button>
       </form>
