@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 
 import { config } from '../../config/index.js';
 import { AppError } from '../../lib/AppError.js';
+import { logger, safeErrorMetadata } from '../../lib/logger.js';
 import { AnalysisFinding } from './analysisFinding.model.js';
 import { Analysis } from './analysis.model.js';
 import type { CreateAnalysisInput, EvidenceInput } from './analysis.schemas.js';
@@ -217,8 +218,10 @@ function getTextualPayload(input: EvidenceInput): { rawText?: string; normalized
   };
 }
 
-function genericFailure(): AppError {
-  return new AppError(500, 'ANALYSIS_FAILED', 'ScamBreak could not safely complete this analysis. Please try again.');
+function genericFailure(cause?: unknown): AppError {
+  return new AppError(500, 'ANALYSIS_FAILED', 'ScamBreak could not safely complete this analysis. Please try again.', {
+    cause
+  });
 }
 
 export class AnalysisService {
@@ -335,6 +338,15 @@ export class AnalysisService {
 
       return this.get(ownerUserId, analysis.publicId);
     } catch (error) {
+      logger.error(
+        {
+          operation: 'analysis.pipeline',
+          analysisId: String(analysis._id),
+          ownerUserId,
+          ...safeErrorMetadata(error)
+        },
+        'Analysis pipeline execution failed'
+      );
       // An analysis is assembled across several collections. If a later
       // pipeline stage fails, remove every partial private record before the
       // staged image is made available again. Restoring only the Upload record
@@ -355,7 +367,7 @@ export class AnalysisService {
         { $set: { status: 'failed', processingError: { code: 'ANALYSIS_FAILED', message: 'The analysis did not complete safely.' } } }
       ).exec();
       if (error instanceof AppError) throw error;
-      throw genericFailure();
+      throw genericFailure(error);
     }
   }
 

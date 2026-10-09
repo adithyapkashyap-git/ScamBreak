@@ -21,6 +21,32 @@ import type {
 } from '../types/analysis';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+const AUTH_TOKEN_KEY = 'scambreak_auth_token';
+
+let authToken: string | null = null;
+try {
+  authToken = localStorage.getItem(AUTH_TOKEN_KEY);
+} catch {
+  // localStorage might be unavailable in private browsing contexts
+}
+
+export function getAuthToken(): string | null {
+  return authToken;
+}
+
+export function setAuthToken(token: string | null | undefined): void {
+  authToken = token ?? null;
+  try {
+    if (token) {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 let csrfToken: string | undefined;
 let csrfRequest: Promise<string> | undefined;
 
@@ -78,10 +104,15 @@ async function getCsrfToken(): Promise<string> {
   return csrfRequest;
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}, isRetry = false): Promise<T> {
   const unsafe = !['GET', 'HEAD', 'OPTIONS'].includes((init.method ?? 'GET').toUpperCase());
   const headers = new Headers({ Accept: 'application/json', ...(init.headers ?? {}) });
-  if (unsafe && !headers.has('Authorization')) headers.set('X-CSRF-Token', await getCsrfToken());
+  if (authToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${authToken}`);
+  }
+  if (unsafe && !headers.has('Authorization')) {
+    headers.set('X-CSRF-Token', await getCsrfToken());
+  }
 
   let response: Response;
   try {
@@ -93,8 +124,16 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   const payload = (await parseJson(response)) as ApiEnvelope<T> | undefined;
   if (!response.ok) {
+    if (response.status === 401) {
+      setAuthToken(null);
+    }
     const error = payload?.error;
-    if (response.status === 403 && error?.code === 'CSRF_TOKEN_INVALID') csrfToken = undefined;
+    if (response.status === 403 && error?.code === 'CSRF_TOKEN_INVALID') {
+      csrfToken = undefined;
+      if (!isRetry && unsafe && !headers.has('Authorization')) {
+        return request<T>(path, init, true);
+      }
+    }
     throw new ApiError(
       error?.message ?? 'The request could not be completed safely.',
       response.status,
@@ -349,20 +388,30 @@ export const authApi = {
     }
   },
   async register(input: { displayName: string; email: string; password: string }): Promise<UserAccount> {
-    const result = await request<{ user: UserAccount }>('/api/auth/register', {
+    const result = await request<{ user: UserAccount; token?: string }>('/api/auth/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
     });
+    if (result.token) {
+      setAuthToken(result.token);
+    }
     return result.user;
   },
   async login(input: { email: string; password: string }): Promise<UserAccount> {
-    const result = await request<{ user: UserAccount }>('/api/auth/login', {
+    const result = await request<{ user: UserAccount; token?: string }>('/api/auth/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
     });
+    if (result.token) {
+      setAuthToken(result.token);
+    }
     return result.user;
   },
   async logout(): Promise<void> {
-    await request<void>('/api/auth/logout', { method: 'POST' });
-    csrfToken = undefined;
+    try {
+      await request<void>('/api/auth/logout', { method: 'POST' });
+    } finally {
+      setAuthToken(null);
+      csrfToken = undefined;
+    }
   },
 };
 

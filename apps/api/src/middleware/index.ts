@@ -1,4 +1,4 @@
-export { csrfProtection, issueCsrfToken, clearCsrfToken } from './csrf.js';
+export { csrfProtection, issueCsrfToken, clearCsrfToken, verifySignedCsrfToken } from './csrf.js';
 export { corsMiddleware } from './cors.js';
 export { errorHandler } from './errorHandler.js';
 export { notFoundHandler } from './notFound.js';

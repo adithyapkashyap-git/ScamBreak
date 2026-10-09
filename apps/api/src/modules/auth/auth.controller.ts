@@ -19,13 +19,13 @@ export const getCsrfToken: RequestHandler = (_req, res): void => {
 export const register: RequestHandler = asyncHandler(async (req, res) => {
   const result = await registerUser(validatedBody<RegisterInput>(req.validated?.body));
   setSessionCookie(res, result.sessionToken);
-  sendSuccess(res, { user: result.user }, 201);
+  sendSuccess(res, { user: result.user, token: result.sessionToken }, 201);
 });
 
 export const login: RequestHandler = asyncHandler(async (req, res) => {
   const result = await loginUser(validatedBody<LoginInput>(req.validated?.body));
   setSessionCookie(res, result.sessionToken);
-  sendSuccess(res, { user: result.user });
+  sendSuccess(res, { user: result.user, token: result.sessionToken });
 });
 
 export const logout: RequestHandler = asyncHandler(async (req, res) => {

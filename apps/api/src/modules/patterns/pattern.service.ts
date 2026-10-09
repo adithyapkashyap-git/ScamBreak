@@ -35,24 +35,29 @@ export async function loadActivePatternDefinitions(): Promise<PatternDefinition[
 
   return records.flatMap((record): PatternDefinition[] => {
     const indicators = record.indicators;
-    const channels = record.applicableChannels.filter((channel): channel is EvidenceChannel => evidenceChannels.has(channel as EvidenceChannel));
+    const channels = (record.applicableChannels ?? []).filter((channel): channel is EvidenceChannel => evidenceChannels.has(channel as EvidenceChannel));
     if (!indicators || !severities.has(record.severity as FindingSeverity) || channels.length === 0) return [];
+
+    const anyFindingCodes = Array.isArray(indicators.anyFindingCodes) ? indicators.anyFindingCodes : [];
+    const allFindingCodes = Array.isArray(indicators.allFindingCodes) ? indicators.allFindingCodes : [];
+    const entityKinds = Array.isArray(indicators.entityKinds) ? indicators.entityKinds : [];
+
     return [{
       patternId: record.patternId,
       category: record.category,
       name: record.name,
       description: record.description,
       indicators: {
-        anyFindingCodes: indicators.anyFindingCodes,
-        ...(indicators.allFindingCodes.length > 0 ? { allFindingCodes: indicators.allFindingCodes } : {}),
-        ...(indicators.entityKinds.length > 0 ? { entityKinds: indicators.entityKinds } : {}),
-        minMatchedIndicators: indicators.minMatchedIndicators
+        anyFindingCodes,
+        ...(allFindingCodes.length > 0 ? { allFindingCodes } : {}),
+        ...(entityKinds.length > 0 ? { entityKinds } : {}),
+        minMatchedIndicators: typeof indicators.minMatchedIndicators === 'number' && indicators.minMatchedIndicators > 0 ? indicators.minMatchedIndicators : 1
       },
       severity: record.severity as FindingSeverity,
       applicableChannels: channels,
-      recommendedProtectiveActions: record.recommendedProtectiveActions,
-      aliases: record.aliases,
-      examples: record.examples,
+      recommendedProtectiveActions: Array.isArray(record.recommendedProtectiveActions) ? record.recommendedProtectiveActions : [],
+      aliases: Array.isArray(record.aliases) ? record.aliases : [],
+      examples: Array.isArray(record.examples) ? record.examples : [],
       version: record.version
     }];
   });

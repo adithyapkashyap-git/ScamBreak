@@ -239,4 +239,71 @@ describe('browser API client', () => {
     expect(capturedBody?.analysisId).toBe('anl_1234567890abcdef');
     expect(capturedBody?.notes).toBe('Notes test');
   });
+
+  it('attaches Bearer token to requests when authToken is set and skips CSRF fetch', async () => {
+    const { authApi, setAuthToken } = await import('./client');
+    setAuthToken('test-bearer-token-xyz');
+
+    const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/auth/me')) {
+        const headers = new Headers(init?.headers);
+        expect(headers.get('Authorization')).toBe('Bearer test-bearer-token-xyz');
+        return jsonResponse({
+          success: true,
+          data: {
+            user: {
+              id: 'usr_test123',
+              email: 'test@example.com',
+              displayName: 'Test User',
+              role: 'user',
+              status: 'active'
+            }
+          }
+        });
+      }
+      return jsonResponse({ error: { message: 'Not found' } }, 404);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const user = await authApi.me();
+    expect(user?.email).toBe('test@example.com');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('/api/auth/me');
+
+    setAuthToken(null);
+  });
+
+  it('stores token on login and clears it on logout', async () => {
+    const { authApi, getAuthToken, setAuthToken } = await import('./client');
+    setAuthToken(null);
+
+    const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/auth/csrf')) {
+        return jsonResponse({ success: true, data: { csrfToken: 'csrf-login-token' } });
+      }
+      if (url.includes('/api/auth/login')) {
+        return jsonResponse({
+          success: true,
+          data: {
+            user: { id: 'usr_1', email: 'user@example.com', displayName: 'User', role: 'user', status: 'active' },
+            token: 'jwt-session-token-abc'
+          }
+        });
+      }
+      if (url.includes('/api/auth/logout')) {
+        return jsonResponse({ success: true, data: null });
+      }
+      return jsonResponse({ error: { message: 'Not found' } }, 404);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const user = await authApi.login({ email: 'user@example.com', password: 'password123' });
+    expect(user.id).toBe('usr_1');
+    expect(getAuthToken()).toBe('jwt-session-token-abc');
+
+    await authApi.logout();
+    expect(getAuthToken()).toBeNull();
+  });
 });
